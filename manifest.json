@@ -1,0 +1,16 @@
+{
+  "short_name": "VibeCheck",
+  "name": "VibeCheck | 全球高顏值地圖",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/1496/1496033.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "background_color": "#050505",
+  "display": "standalone",
+  "scope": "/",
+  "theme_color": "#ff2d55"
+}
