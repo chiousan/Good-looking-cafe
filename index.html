@@ -4,17 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>VibeCheck | 全球高顏值地圖</title>
-    <link rel="manifest" href="manifest.json">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { background: #050505; color: #eee; font-family: -apple-system, system-ui; }
         .glass { background: rgba(255,255,255,0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.08); }
         .vibe-gradient { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .card-active:active { transform: scale(0.98); transition: 0.1s; }
     </style>
 </head>
 <body class="pb-24">
@@ -25,57 +20,47 @@
         </div>
     </header>
 
-    <div class="flex overflow-x-auto px-6 py-4 space-x-3 no-scrollbar">
-        <button onclick="filter('全部')" class="city-btn px-6 py-2 rounded-full glass text-sm font-bold bg-white text-black">全部</button>
-        <button onclick="filter('台北')" class="city-btn px-6 py-2 rounded-full glass text-sm font-bold">台北</button>
-        <button onclick="filter('台中')" class="city-btn px-6 py-2 rounded-full glass text-sm font-bold">台中</button>
-        <button onclick="filter('新竹')" class="city-btn px-6 py-2 rounded-full glass text-sm font-bold">新竹</button>
-        <button onclick="filter('雲嘉南')" class="city-btn px-6 py-2 rounded-full glass text-sm font-bold">雲嘉南</button>
-        <button onclick="filter('高屏')" class="city-btn px-6 py-2 rounded-full glass text-sm font-bold">高屏</button>
+    <div id="list" class="px-6 space-y-6 mt-6">
+        <div class="text-center py-20 text-gray-500 italic">正在從「高顏質地圖資料庫」讀取訊號...</div>
     </div>
 
-    <main id="list" class="px-6 space-y-6 mt-2"></main>
-
     <script>
-        // 這是你的正確 CSV 連結
         const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQB13No18KjJp619uNWQGXd2ZEyMqQP0Bho2fFifMIANH7x24G26WYtgO5olQfd3vtILyyhHSe0L5Nh/pub?output=csv";
-        let allData = [];
 
         async function loadData() {
             try {
                 const response = await fetch(CSV_URL);
                 const text = await response.text();
-                // 修正：更精確的行分割與資料抓取邏輯
-                const rows = text.split('\n').filter(row => row.trim() !== '').slice(1); 
-                allData = rows.map(row => {
-                    const cols = row.split(',');
-                    // 根據你截圖 [image_af6738.png] 的欄位順序校準：
-                    // B(1):city, C(2):area, D(3):name, E(4):vibe, F(5):ig, G(6):book
-                    return { 
-                        city: cols[1] ? cols[1].trim() : "", 
-                        area: cols[2] ? cols[2].trim() : "", 
-                        name: cols[3] ? cols[3].trim() : "", 
-                        vibe: cols[4] ? cols[4].trim() : "", 
-                        ig: cols[5] ? cols[5].trim() : "#", 
-                        book: cols[6] ? cols[6].trim() : "#" 
+                // 排除標題列並過濾空行
+                const lines = text.split(/\r?\n/).filter(line => line.trim() !== "").slice(1);
+                
+                const shops = lines.map(line => {
+                    // 使用正則表達式處理 CSV，確保網址內的逗號不會導致錯誤
+                    const parts = line.split(/,(?=(?:(?:[^"]*"){2})*[^ Chin]*$)/);
+                    return {
+                        city: (parts[1] || "").trim(),
+                        area: (parts[2] || "").trim(),
+                        name: (parts[3] || "").trim(),
+                        vibe: (parts[4] || "").trim(),
+                        ig: (parts[5] || "").trim().replace(/^"|"$/g, ''),
+                        book: (parts[6] || "").trim().replace(/^"|"$/g, '')
                     };
                 });
-                render(allData);
+                render(shops);
             } catch (e) {
-                console.error("載入失敗", e);
+                document.getElementById('list').innerHTML = "載入失敗，請確認網路連線";
             }
         }
 
         function render(data) {
             const list = document.getElementById('list');
             list.innerHTML = data.map(shop => `
-                <div class="glass rounded-[2rem] p-6 mb-4 card-active">
+                <div class="glass rounded-[2rem] p-6">
                     <div class="flex justify-between items-start mb-4">
                         <div>
-                            <span class="text-[10px] text-pink-500 font-bold tracking-widest uppercase">${shop.city} · ${shop.area}</span>
+                            <span class="text-[10px] text-pink-500 font-bold tracking-widest">${shop.city} · ${shop.area}</span>
                             <h2 class="text-xl font-bold mt-1">${shop.name}</h2>
                         </div>
-                        <div class="bg-green-500/20 text-green-400 text-[10px] px-2 py-1 rounded-md font-bold uppercase">Live Vibe</div>
                     </div>
                     <p class="text-gray-400 text-sm mb-5">${shop.vibe}</p>
                     <div class="grid grid-cols-2 gap-3">
@@ -84,15 +69,6 @@
                     </div>
                 </div>
             `).join('');
-        }
-
-        function filter(city) {
-            document.querySelectorAll('.city-btn').forEach(btn => {
-                btn.classList.remove('bg-white', 'text-black');
-                if(btn.innerText === city) btn.classList.add('bg-white', 'text-black');
-            });
-            const filtered = city === '全部' ? allData : allData.filter(s => s.city.includes(city));
-            render(filtered);
         }
 
         loadData();
