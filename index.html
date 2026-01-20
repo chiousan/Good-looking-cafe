@@ -14,15 +14,12 @@
 </head>
 <body class="pb-24">
     <header class="sticky top-0 z-50 glass px-6 py-4 flex justify-between items-center">
-        <div>
-            <h1 class="text-2xl font-black vibe-gradient italic">VibeCheck</h1>
-            <p class="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Global Aesthetics Map</p>
-        </div>
+        <h1 class="text-2xl font-black vibe-gradient italic">VibeCheck</h1>
     </header>
 
-    <div id="list" class="px-6 space-y-6 mt-6">
-        <div class="text-center py-20 text-gray-500 italic">正在從「高顏質地圖資料庫」讀取訊號...</div>
-    </div>
+    <main id="list" class="px-6 space-y-6 mt-6">
+        <div class="text-center py-20 text-gray-500 italic">同步資料庫訊號中...</div>
+    </main>
 
     <script>
         const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQB13No18KjJp619uNWQGXd2ZEyMqQP0Bho2fFifMIANH7x24G26WYtgO5olQfd3vtILyyhHSe0L5Nh/pub?output=csv";
@@ -31,19 +28,19 @@
             try {
                 const response = await fetch(CSV_URL);
                 const text = await response.text();
-                // 排除標題列並過濾空行
+                // 使用正則表達式處理 CSV 換行與逗點，並跳過標題列
                 const lines = text.split(/\r?\n/).filter(line => line.trim() !== "").slice(1);
                 
                 const shops = lines.map(line => {
-                    // 使用正則表達式處理 CSV，確保網址內的逗號不會導致錯誤
-                    const parts = line.split(/,(?=(?:(?:[^"]*"){2})*[^ Chin]*$)/);
+                    // 精準切割欄位並去除前後空格與引號
+                    const cols = line.split(',').map(c => c.trim().replace(/^"|"$/g, ''));
                     return {
-                        city: (parts[1] || "").trim(),
-                        area: (parts[2] || "").trim(),
-                        name: (parts[3] || "").trim(),
-                        vibe: (parts[4] || "").trim(),
-                        ig: (parts[5] || "").trim().replace(/^"|"$/g, ''),
-                        book: (parts[6] || "").trim().replace(/^"|"$/g, '')
+                        city: cols[1] || "",
+                        area: cols[2] || "",
+                        name: cols[3] || "",
+                        vibe: cols[4] || "",
+                        ig: cols[5] || "#",
+                        book: cols[6] || "#"
                     };
                 });
                 render(shops);
