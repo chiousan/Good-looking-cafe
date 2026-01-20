@@ -10,7 +10,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --accent: #ff2d55; }
         body { background: #050505; color: #eee; font-family: -apple-system, system-ui; }
         .glass { background: rgba(255,255,255,0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.08); }
         .vibe-gradient { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
@@ -19,15 +18,10 @@
     </style>
 </head>
 <body class="pb-24">
-
     <header class="sticky top-0 z-50 glass px-6 py-4 flex justify-between items-center">
         <div>
             <h1 class="text-2xl font-black vibe-gradient italic">VibeCheck</h1>
             <p class="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Global Aesthetics Map</p>
-        </div>
-        <div class="flex space-x-4 text-gray-400">
-            <i class="fas fa-bell"></i>
-            <i class="fas fa-sliders-h"></i>
         </div>
     </header>
 
@@ -40,52 +34,48 @@
         <button onclick="filter('高屏')" class="city-btn px-6 py-2 rounded-full glass text-sm font-bold">高屏</button>
     </div>
 
-    <main id="list" class="px-6 space-y-6 mt-2">
-        <div class="text-center py-20 text-gray-500">載入高顏值資料中...</div>
-    </main>
-
-    <nav class="fixed bottom-0 w-full glass flex justify-around p-5 rounded-t-[32px] border-t-0 shadow-2xl">
-        <i class="fas fa-compass text-2xl text-pink-500"></i>
-        <i class="fas fa-map-marked-alt text-2xl text-gray-600"></i>
-        <i class="fas fa-bolt text-2xl text-gray-600"></i>
-        <i class="fas fa-user-circle text-2xl text-gray-600"></i>
-    </nav>
+    <main id="list" class="px-6 space-y-6 mt-2"></main>
 
     <script>
-        // 這裡就是你剛才提供的神經連結！
+        // 這是你的正確 CSV 連結
         const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQB13No18KjJp619uNWQGXd2ZEyMqQP0Bho2fFifMIANH7x24G26WYtgO5olQfd3vtILyyhHSe0L5Nh/pub?output=csv";
-        
         let allData = [];
 
         async function loadData() {
             try {
                 const response = await fetch(CSV_URL);
                 const text = await response.text();
+                // 修正：更精確的行分割與資料抓取邏輯
                 const rows = text.split('\n').filter(row => row.trim() !== '').slice(1); 
                 allData = rows.map(row => {
-                    // 處理 CSV 的逗點分割，考慮到內容可能包含逗點
                     const cols = row.split(',');
+                    // 根據你截圖 [image_af6738.png] 的欄位順序校準：
+                    // B(1):city, C(2):area, D(3):name, E(4):vibe, F(5):ig, G(6):book
                     return { 
-                        id: cols[0], city: cols[1], area: cols[2], 
-                        name: cols[3], vibe: cols[4], ig: cols[5], book: cols[6] 
+                        city: cols[1] ? cols[1].trim() : "", 
+                        area: cols[2] ? cols[2].trim() : "", 
+                        name: cols[3] ? cols[3].trim() : "", 
+                        vibe: cols[4] ? cols[4].trim() : "", 
+                        ig: cols[5] ? cols[5].trim() : "#", 
+                        book: cols[6] ? cols[6].trim() : "#" 
                     };
                 });
                 render(allData);
             } catch (e) {
-                document.getElementById('list').innerHTML = `<div class="text-center py-20 text-red-500">資料讀取失敗，請檢查網路連接。</div>`;
+                console.error("載入失敗", e);
             }
         }
 
         function render(data) {
             const list = document.getElementById('list');
             list.innerHTML = data.map(shop => `
-                <div class="glass rounded-[2rem] p-6 card-active">
+                <div class="glass rounded-[2rem] p-6 mb-4 card-active">
                     <div class="flex justify-between items-start mb-4">
                         <div>
                             <span class="text-[10px] text-pink-500 font-bold tracking-widest uppercase">${shop.city} · ${shop.area}</span>
                             <h2 class="text-xl font-bold mt-1">${shop.name}</h2>
                         </div>
-                        <div class="bg-green-500/20 text-green-400 text-[10px] px-2 py-1 rounded-md font-bold">LIVE VIBE</div>
+                        <div class="bg-green-500/20 text-green-400 text-[10px] px-2 py-1 rounded-md font-bold uppercase">Live Vibe</div>
                     </div>
                     <p class="text-gray-400 text-sm mb-5">${shop.vibe}</p>
                     <div class="grid grid-cols-2 gap-3">
